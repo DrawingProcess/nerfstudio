@@ -259,7 +259,7 @@ class NGPModel(Model):
 
         # Apply depth eval metric
         depth_image = batch["depth_image"].to(self.device)
-        abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3 = compute_depth_errors(depth_image, depth)
+        abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3 = compute_depth_errors(depth_image, outputs["depth"])
 
         # all of these metrics will be logged as scalars
         # metrics_dict = {"psnr": float(psnr.item()), "ssim": float(ssim), "lpips": float(lpips)}
@@ -287,6 +287,8 @@ def compute_depth_errors(gt, pred):
     rmse_log = torch.sqrt(rmse_log.mean())
 
     delta = torch.max((gt / pred), (pred / gt))
+    print("(pred): ", torch.max(pred), torch.min(pred))
+    print("(gt): ", torch.max(gt), torch.min(gt))
     a1 = (delta < 1.25     ).float().mean()
     a2 = (delta < 1.25 ** 2).float().mean()
     a3 = (delta < 1.25 ** 3).float().mean()

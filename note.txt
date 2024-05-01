@@ -1,6 +1,6 @@
 # depth custom data
 1. Extract record3d (EXR + JPG sequence)
-2. ns-process-data record3d --data {data directory} --output-dir {output directory}
+2. ns-process-data record3d --data nerf_custom/record3d_lab_simple/EXR_RGBD/ --output-dir nerf_custom/record3d_lab_simple/ --max_dataset_size 400
 3. cd ../../data && python depth_read_exr.py && python transforms_depth.py
 4. ns-train 
 
