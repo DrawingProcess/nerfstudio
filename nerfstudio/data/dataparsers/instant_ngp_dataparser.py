@@ -195,6 +195,7 @@ class InstantNGP(DataParser):
             depth_filenames=depth_filenames if len(depth_filenames) > 0 else None,
             dataparser_scale=self.config.scene_scale,
         )
+        # print("dataparser_outputs: ", dataparser_outputs)
 
         return dataparser_outputs
 
