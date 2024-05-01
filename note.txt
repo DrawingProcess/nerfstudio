@@ -1,0 +1,5 @@
+ns-viewer --load-config outputs/headset_alphabg/instant-ngp/2024-04-09_124400/config.yml --viewer.make-share-url True
+
+ns-render camera-path --load-config outputs/headset_alphabg/instant-ngp/2024-04-09_124400/config.yml --camera-path-filename /data/csj000714/repos/nerfstudio/../../data/nerf_custom/headset_alphabg/camera_paths/2024-04-18-12-55-14.json --output-path renders/headset_alphabg/2024-04-18-12-55-14.mp4
+
+ns-eval --load-config=outputs/headset_alphabg/instant-ngp/2024-04-09_124400/config.yml --output-path=outputs/headset_alphabg/instant-ngp/2024-04-09_124400/output.json
