@@ -36,6 +36,8 @@ from nerfstudio.model_components.renderers import AccumulationRenderer, DepthRen
 from nerfstudio.models.base_model import Model, ModelConfig
 from nerfstudio.utils import colormaps
 
+import os
+import numpy as np
 
 @dataclass
 class InstantNGPModelConfig(ModelConfig):
@@ -75,7 +77,6 @@ class InstantNGPModelConfig(ModelConfig):
     """The color that is given to untrained areas."""
     disable_scene_contraction: bool = False
     """Whether to disable scene contraction or not."""
-
 
 class NGPModel(Model):
     """Instant NGP model
@@ -142,6 +143,12 @@ class NGPModel(Model):
         self.psnr = PeakSignalNoiseRatio(data_range=1.0)
         self.ssim = structural_similarity_index_measure
         self.lpips = LearnedPerceptualImagePatchSimilarity(normalize=True)
+
+        self.output_path = "outputs/240508_classroom/instant-ngp/2024-05-15_230307/"
+        os.makedirs(self.output_path + "images/rgb/", exist_ok=True)
+        os.makedirs(self.output_path + "images/depth/", exist_ok=True)
+        os.makedirs(self.output_path + "images/depth_gt/", exist_ok=True)
+        self.count = 1
 
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes
@@ -257,16 +264,26 @@ class NGPModel(Model):
         ssim = self.ssim(image, rgb)
         lpips = self.lpips(image, rgb)
 
+        metrics_dict = {"psnr": float(psnr.item()), "ssim": float(ssim), "lpips": float(lpips)}
+
         # Apply depth eval metric
         depth_image = batch["depth_image"].to(self.device)
-        abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3 = compute_depth_errors(depth_image, outputs["depth"])
+        depth_image_np = depth_image.detach().cpu().numpy()
 
-        # all of these metrics will be logged as scalars
-        # metrics_dict = {"psnr": float(psnr.item()), "ssim": float(ssim), "lpips": float(lpips)}
-        metrics_dict = {"psnr": float(psnr.item()), "ssim": float(ssim), "lpips": float(lpips),\
-                        "abs_rel": float(abs_rel), "sq_rel": float(sq_rel), "rmse": float(rmse), "rmse_log": float(rmse_log), \
-                        "a1": float(a1), "a2": float(a2), "a3": float(a3)}  # type: ignore
-        # TODO(ethan): return an image dictionary
+        if not np.isnan(depth_image_np).max():
+            abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3 = compute_depth_errors(depth_image, outputs["depth"])
+            # all of these metrics will be logged as scalars
+            # metrics_dict = {"psnr": float(psnr.item()), "ssim": float(ssim), "lpips": float(lpips)}
+            metrics_dict = {"psnr": float(psnr.item()), "ssim": float(ssim), "lpips": float(lpips),\
+                            "abs_rel": float(abs_rel), "sq_rel": float(sq_rel), "rmse": float(rmse), "rmse_log": float(rmse_log), \
+                            "a1": float(a1), "a2": float(a2), "a3": float(a3)}  # type: ignore
+
+            file_num = str(self.count).zfill(5)
+            file = "frame_" + file_num + '.jpg'
+
+            save_image(self.output_path + "images/rgb/" + file, outputs["rgb"])
+            save_image(self.output_path + "images/depth/" + file, outputs["depth"])
+            save_image(self.output_path + "images/depth_gt/" + file, depth_image)
 
         images_dict = {
             "img": combined_rgb,
@@ -274,7 +291,23 @@ class NGPModel(Model):
             "depth": combined_depth,
         }
 
+        self.count = self.count + 1
+
         return metrics_dict, images_dict
+
+def save_image(file_path, img):
+    import matplotlib.pyplot as plt
+
+    img = img.detach().cpu().numpy() # tensor -> numpy
+    if img.shape[2] == 1:
+        img = np.squeeze(img, axis=2) # [H,W,1] -> [H,W]
+    # img = np.transpose(img, (1, 0, 2)) # [W,H,C] -> [H,W,C]
+    # normalize
+    min_img = np.nanmin(img)
+    max_img = np.nanmax(img)
+    img = (img - min_img) / (max_img - min_img)
+
+    plt.imsave(file_path, img)
 
 # https://gaussian37.github.io/vision-depth-metrics/
 def compute_depth_errors(gt, pred):   

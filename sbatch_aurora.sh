@@ -16,7 +16,7 @@ pwd
 which python
 hostname
 
-ns-train instant-ngp --data ../../data/nerf_custom/record3d_lab_simple/ --vis viewer+wandb
+ns-train instant-ngp --data ../../data/nerf_custom/240508_desk/ --vis viewer+wandb
 # ns-train depth-nerfacto --data ../../data/nerf_custom/umbrella_100_alphabg/
 
 # ns-train nerfacto --data /data/csj000714/data/nerf_synthetic/lego
