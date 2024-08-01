@@ -1,0 +1,11 @@
+# depth custom data
+1. Extract record3d (EXR + JPG sequence)
+2. ns-process-data record3d --data nerf_custom/record3d_lab_simple/EXR_RGBD/ --output-dir nerf_custom/record3d_lab_simple/ --max_dataset_size 400
+3. cd ../../data && python depth_exr_to_npy.py
+4. ns-train 
+
+ns-train instant-ngp --data ../../data/nerf_custom/record3d_lab_simple/ --vis viewer+wandb
+ns-eval --load-config=outputs/headset_alphabg/instant-ngp/2024-04-09_124400/config.yml --output-path=outputs/headset_alphabg/instant-ngp/2024-04-09_124400/output.json
+
+ns-viewer --load-config outputs/headset_alphabg/instant-ngp/2024-04-09_124400/config.yml --viewer.make-share-url True
+ns-render camera-path --load-config outputs/headset_alphabg/instant-ngp/2024-04-09_124400/config.yml --camera-path-filename /data/csj000714/repos/nerfstudio/../../data/nerf_custom/headset_alphabg/camera_paths/2024-04-18-12-55-14.json --output-path renders/headset_alphabg/2024-04-18-12-55-14.mp4
