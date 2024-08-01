@@ -386,12 +386,29 @@ class VanillaPipeline(Pipeline):
                 metrics_dict[fps_str] = (metrics_dict["num_rays_per_sec"] / (height * width)).item()
                 metrics_dict_list.append(metrics_dict)
                 progress.advance(task)
+        
+        # for metric depth 
+        metrics_dict_depth_idx = []
+        for idx, metrics_dict in enumerate(metrics_dict_list):
+            if "abs_rel" in metrics_dict:
+                metrics_dict_depth_idx.append(idx)
+        
+        dict_idx = metrics_dict_depth_idx[0] if len(metrics_dict_depth_idx) else 0
+
         # average the metrics list
         metrics_dict = {}
-        for key in metrics_dict_list[0].keys():
+        # for key in metrics_dict_list[0].keys():
+        for key in metrics_dict_list[dict_idx].keys():
             if get_std:
+                # for metric depth 
+                metrics_value = []
+                for metrics_dict in metrics_dict_list:
+                    if key in metrics_dict:
+                        metrics_value.append(metrics_dict[key])
+                
                 key_std, key_mean = torch.std_mean(
-                    torch.tensor([metrics_dict[key] for metrics_dict in metrics_dict_list])
+                    # torch.tensor([metrics_dict[key] for metrics_dict in metrics_dict_list])
+                    torch.tensor(metrics_value)
                 )
                 metrics_dict[key] = float(key_mean)
                 metrics_dict[f"{key}_std"] = float(key_std)

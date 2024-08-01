@@ -78,6 +78,7 @@ class InstantNGP(DataParser):
 
         image_filenames = []
         mask_filenames = []
+        depth_filenames = []
         poses = []
         num_skipped_image_filenames = 0
         for frame in meta["frames"]:
@@ -103,6 +104,9 @@ class InstantNGP(DataParser):
                 if "mask_path" in frame:
                     mask_fname = data_dir / Path(frame["mask_path"])
                     mask_filenames.append(mask_fname)
+                if "depth_file_path" in frame:
+                    depth_fname = data_dir / Path(frame["depth_file_path"])
+                    depth_filenames.append(depth_fname)
         if num_skipped_image_filenames >= 0:
             CONSOLE.print(f"Skipping {num_skipped_image_filenames} files in dataset split {split}.")
         assert len(image_filenames) != 0, """
@@ -136,6 +140,7 @@ class InstantNGP(DataParser):
         # Choose image_filenames and poses based on split, but after auto orient and scaling the poses.
         image_filenames = [image_filenames[i] for i in indices]
         mask_filenames = [mask_filenames[i] for i in indices] if len(mask_filenames) > 0 else []
+        depth_filenames = [depth_filenames[i] for i in indices] if len(depth_filenames) > 0 else []
 
         idx_tensor = torch.tensor(indices, dtype=torch.long)
         poses = poses[idx_tensor]
@@ -187,8 +192,10 @@ class InstantNGP(DataParser):
             cameras=cameras,
             scene_box=scene_box,
             mask_filenames=mask_filenames if len(mask_filenames) > 0 else None,
+            depth_filenames=depth_filenames if len(depth_filenames) > 0 else None,
             dataparser_scale=self.config.scene_scale,
         )
+        # print("dataparser_outputs: ", dataparser_outputs)
 
         return dataparser_outputs
 

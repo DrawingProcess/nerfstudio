@@ -1,0 +1,11 @@
+{
+    "name": "nerfstudio",
+    "host": "moana.khu.ac.kr",
+    "protocol": "sftp",
+    "port": 30080,
+    "username": "khlee01",
+    "remotePath": "/data/khlee01/repos/nerfstudio/",
+    "uploadOnSave": true,
+    "useTempFile": false,
+    "openSsh": false
+}

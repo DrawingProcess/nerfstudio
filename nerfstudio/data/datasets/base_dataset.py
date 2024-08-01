@@ -31,7 +31,7 @@ from torch.utils.data import Dataset
 
 from nerfstudio.cameras.cameras import Cameras
 from nerfstudio.data.dataparsers.base_dataparser import DataparserOutputs
-from nerfstudio.data.utils.data_utils import get_image_mask_tensor_from_path
+from nerfstudio.data.utils.data_utils import get_image_mask_tensor_from_path, get_depth_image_from_path
 
 
 class InputDataset(Dataset):
@@ -42,7 +42,7 @@ class InputDataset(Dataset):
         scale_factor: The scaling factor for the dataparser outputs
     """
 
-    exclude_batch_keys_from_device: List[str] = ["image", "mask"]
+    exclude_batch_keys_from_device: List[str] = ["image", "mask", "depth_image"]
     cameras: Cameras
 
     def __init__(self, dataparser_outputs: DataparserOutputs, scale_factor: float = 1.0):
@@ -52,6 +52,7 @@ class InputDataset(Dataset):
         self.scene_box = deepcopy(dataparser_outputs.scene_box)
         self.metadata = deepcopy(dataparser_outputs.metadata)
         self.cameras = deepcopy(dataparser_outputs.cameras)
+        self.depth_filenames = dataparser_outputs.depth_filenames
         self.cameras.rescale_output_resolution(scaling_factor=scale_factor)
         self.mask_color = dataparser_outputs.metadata.get("mask_color", None)
 
@@ -134,6 +135,14 @@ class InputDataset(Dataset):
             data["image"] = torch.where(
                 data["mask"] == 1.0, data["image"], torch.ones_like(data["image"]) * torch.tensor(self.mask_color)
             )
+        if self._dataparser_outputs.depth_filenames is not None:
+            depth_filepath = self._dataparser_outputs.depth_filenames[image_idx]
+            height = int(self._dataparser_outputs.cameras.height[data["image_idx"]])
+            width = int(self._dataparser_outputs.cameras.width[data["image_idx"]])
+            data["depth_image"] = get_depth_image_from_path(filepath=depth_filepath, height=height, width=width, scale_factor=self.scale_factor)
+            assert (
+                data["depth_image"].shape[:2] == data["image"].shape[:2]
+            ), f"Depth and image have different shapes. Got {data['depth_image'].shape[:2]} and {data['image'].shape[:2]}"
         metadata = self.get_metadata(data)
         data.update(metadata)
         return data
